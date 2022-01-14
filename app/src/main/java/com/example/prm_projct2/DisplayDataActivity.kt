@@ -7,7 +7,10 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.prm_projct2.databinding.ActivityDisplayDataBinding
+import com.example.prm_projct2.models.Item
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.InputStream
@@ -16,13 +19,13 @@ import java.util.concurrent.Executors
 
 class DisplayDataActivity : AppCompatActivity() {
 
-    private lateinit var links: MutableList<String>
+
     lateinit var binding:ActivityDisplayDataBinding
     private val myExecutor = Executors.newSingleThreadExecutor()
     private val myHandler = Handler(Looper.getMainLooper())
-    lateinit var rvNews: ListView
+    lateinit var rvNews: RecyclerView
     val FEED_WORLD_URL = "https://feeds.skynews.com/feeds/rss/world.xml"
-    lateinit var titles:MutableList<String>
+    lateinit var items:MutableList<Item>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,8 +33,8 @@ class DisplayDataActivity : AppCompatActivity() {
         binding = ActivityDisplayDataBinding.inflate(layoutInflater)
         setContentView(binding.root)
         rvNews = binding.rvNews
-        titles = mutableListOf()
-        links = mutableListOf()
+        items = mutableListOf()
+
         parseDataInBackground()
 
     }
@@ -54,32 +57,45 @@ class DisplayDataActivity : AppCompatActivity() {
 
             var eventType = xmlParser.eventType
 
+            var title:String?= null
+            var img:String?= null
+            var description:String?= null
+            var link:String?= null
             while(eventType != XmlPullParser.END_DOCUMENT){
 
-                println(xmlParser.name)
-                if(eventType == XmlPullParser.START_TAG){
 
+
+                if(eventType == XmlPullParser.START_TAG){
                     if(xmlParser.name.equals("item")){
                         insideItem = true
+
                     }else if(xmlParser.name.equals("title")&&insideItem){
-
-                        titles.add(xmlParser.nextText())
-
+                        title = xmlParser.nextText()
+                    }else if(xmlParser.name.equals("media:content")&&insideItem){
+                        img = xmlParser.getAttributeValue(null,"url")
+                    }else if(xmlParser.name.equals("description")&&insideItem){
+                        description = xmlParser.nextText()
                     }else if(xmlParser.name.equals("link")&&insideItem){
-
-                        links.add(xmlParser.nextText())
+                        link = xmlParser.nextText()
                     }
+
                 }else if(eventType == XmlPullParser.END_TAG && xmlParser.name.equals("item")){
+                    val item = Item(title,img,description,link)
+                    items.add(item)
                     insideItem = false
+                    link = null
+                    img = null
+                    description = null
+                    title = null
                 }
-                eventType = xmlParser.nextTag()
+                eventType = xmlParser.next()
             }
 
-
             myHandler.post{
-               val adapter = ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, titles)
+              val adapter = RecyclerAdapter(items)
                 rvNews.adapter = adapter
-
+                rvNews.layoutManager = LinearLayoutManager(this)
+                rvNews.setHasFixedSize(true)
             }
 
         }
