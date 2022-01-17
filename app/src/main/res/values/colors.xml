@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="unread_item">#95F1E88E</color>
     <color name="item_title">#009688</color>
+    <color name="read_item">#00969393</color>
 </resources>
